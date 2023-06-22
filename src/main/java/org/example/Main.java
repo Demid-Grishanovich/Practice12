@@ -1,56 +1,45 @@
 package org.example;
 
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.FileReader;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     private static final String PATH = "src/result.json";
+    private static final String RESULTS = "results";
+    private static final String DATE = "date";
+    public static final String MARK = "mark";
 
     public static void main(String[] args) {
-        ArrayList<Result> resultList = new ArrayList<>();
+        try (FileReader reader = new FileReader(PATH)) {
+            JSONParser parser = new JSONParser();
+            JSONObject root = (JSONObject) parser.parse(reader);
 
-        JSONParser parser = new JSONParser();
+            JSONArray results = (JSONArray) root.get(RESULTS);
 
-        try {
-            Object obj = parser.parse(new FileReader(PATH));
-
-            JSONObject jsonObject = (JSONObject) obj;
-            JSONArray results = (JSONArray) jsonObject.get("results");
-
+            List<Result> resultsList = new ArrayList<>();
             for (Object result : results) {
-                JSONObject resultObj = (JSONObject) result;
+                JSONObject resultJson = (JSONObject) result;
+                String login = (String) resultJson.keySet().iterator().next();
+                JSONArray resultArray = (JSONArray) resultJson.get(login);
 
-                for (Object test : resultObj.values()) {
-                    JSONArray testArray = (JSONArray) test;
-
-                    for (Object testObj : testArray) {
-                        JSONObject testDetails = (JSONObject) testObj;
-
-                        String testName = (String) testDetails.keySet().iterator().next();
-                        JSONObject testInfo = (JSONObject) testDetails.get(testName);
-
-                        String login = resultObj.keySet().iterator().next().toString();
-                        String testDate = (String) testInfo.get("date");
-                        int testMark = (int) ((double) (testInfo.get("mark")) * 10);
-
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                        java.util.Date utilDate = sdf.parse(testDate);
-                        Date sqlDate = new Date(utilDate.getTime());
-
-                        Result resultObject = new Result(login, testName, sqlDate, testMark);
-                        resultList.add(resultObject);
-                    }
+                for (Object o : resultArray) {
+                    JSONObject test = (JSONObject) o;
+                    String testName = (String) test.keySet().iterator().next();
+                    JSONObject details = (JSONObject) test.get(testName);
+                    String date = (String) details.get(DATE);
+                    Double mark = (Double) details.get(MARK);
+                    resultsList.add(new Result(login, testName, date, mark));
                 }
             }
 
-            for (Result result : resultList) {
-                System.out.println(result);
+            for (Result res : resultsList) {
+                System.out.println(res);
             }
         } catch (Exception e) {
             e.printStackTrace();
